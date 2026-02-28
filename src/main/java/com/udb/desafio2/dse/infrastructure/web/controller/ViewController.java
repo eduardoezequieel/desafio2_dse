@@ -1,5 +1,7 @@
 package com.udb.desafio2.dse.infrastructure.web.controller;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,12 @@ public class ViewController {
 
     @GetMapping("/login")
     public String login(@RequestParam(value = "redirect", required = false) String redirect, Model model) {
+        // Check if user is already authenticated
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !authentication.getPrincipal().equals("anonymousUser")) {
+            return "redirect:/dashboard";
+        }
+
         if (redirect != null && !redirect.isBlank()) {
             model.addAttribute("redirect", redirect);
         }
@@ -18,6 +26,12 @@ public class ViewController {
 
     @GetMapping("/register")
     public String register() {
+        // Check if user is already authenticated
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated() && !authentication.getPrincipal().equals("anonymousUser")) {
+            return "redirect:/dashboard";
+        }
+
         return "register";
     }
 

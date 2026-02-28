@@ -1,5 +1,12 @@
 # Project Guidelines for Desafio2-DSE
 
+## Instructions
+- Do not create unnecessary markdown files
+- Do not execute checks that are not relevant to the project
+- Focus on writing clean, maintainable code
+- Follow best practices for Java development
+- Make sure to execute the requests ASAP to meet deadlines
+
 ## Architecture
 - Follow DDD/Hexagonal architecture with domain/, application/, infrastructure/ layers
 - Domain entities should be pure Java with Lombok
