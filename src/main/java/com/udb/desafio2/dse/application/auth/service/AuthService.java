@@ -3,7 +3,8 @@ package com.udb.desafio2.dse.application.auth.service;
 import com.udb.desafio2.dse.application.auth.dto.LoginRequest;
 import com.udb.desafio2.dse.application.auth.dto.LoginResponse;
 import com.udb.desafio2.dse.application.auth.dto.RegisterRequest;
-import com.udb.desafio2.dse.domain.user.model.Role;
+import com.udb.desafio2.dse.domain.client.model.Client;
+import com.udb.desafio2.dse.domain.client.repository.ClientRepository;
 import com.udb.desafio2.dse.domain.user.model.User;
 import com.udb.desafio2.dse.domain.user.repository.UserRepository;
 import com.udb.desafio2.dse.infrastructure.security.JwtTokenProvider;
@@ -12,65 +13,77 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final ClientRepository clientRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
 
     public LoginResponse register(RegisterRequest request) {
-        // Validar que las contraseñas coincidan
         if (!request.getPassword().equals(request.getPasswordConfirm())) {
             throw new IllegalArgumentException("Las contraseñas no coinciden");
         }
 
-        // Validar que el email no exista
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (clientRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("El correo electrónico ya está registrado");
         }
 
-        // Crear nuevo usuario
-        User user = new User();
-        user.updateData(request.getNombre(), request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.ADMIN);
-        user.setCreatedAt(LocalDateTime.now());
+        Client client = new Client();
+        client.updateData(request.getNombre(), request.getEmail());
+        client.setPassword(passwordEncoder.encode(request.getPassword()));
+        client.setCreatedAt(LocalDateTime.now());
 
-        User savedUser = userRepository.save(user);
+        Client saved = clientRepository.save(client);
 
-        // Generar token
-        String token = jwtTokenProvider.generateToken(savedUser.getEmail(), savedUser.getRole().getValue());
+        String token = jwtTokenProvider.generateToken(saved.getEmail(), "CLIENT");
 
         return LoginResponse.builder()
-                .id(savedUser.getId())
-                .nombre(savedUser.getName())
-                .email(savedUser.getEmail())
-                .role(savedUser.getRole().getValue())
+                .id(saved.getId())
+                .nombre(saved.getNombre())
+                .email(saved.getEmail())
+                .role("CLIENT")
                 .token(token)
                 .build();
     }
 
     public LoginResponse login(LoginRequest request) {
-        // Buscar usuario por email
-        User user = userRepository.findByEmail(request.getEmail())
+        // Try admin users first
+        Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
+        if (userOpt.isPresent()) {
+            User user = userOpt.get();
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new IllegalArgumentException("Correo electrónico o contraseña incorrectos");
+            }
+            String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().getValue());
+            return LoginResponse.builder()
+                    .id(user.getId())
+                    .nombre(user.getName())
+                    .email(user.getEmail())
+                    .role(user.getRole().getValue())
+                    .token(token)
+                    .build();
+        }
+
+        // Try clients
+        Client client = clientRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Correo electrónico o contraseña incorrectos"));
 
-        // Validar contraseña
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getPassword(), client.getPassword())) {
             throw new IllegalArgumentException("Correo electrónico o contraseña incorrectos");
         }
 
-        // Generar token
-        String token = jwtTokenProvider.generateToken(user.getEmail(), user.getRole().getValue());
+        String token = jwtTokenProvider.generateToken(client.getEmail(), "CLIENT");
 
         return LoginResponse.builder()
-                .id(user.getId())
-                .nombre(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole().getValue())
+                .id(client.getId())
+                .nombre(client.getNombre())
+                .email(client.getEmail())
+                .role("CLIENT")
                 .token(token)
                 .build();
     }
@@ -85,4 +98,3 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
     }
 }
-

@@ -39,8 +39,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/h2-console", "/h2-console/**").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/static/**").permitAll()
-                        .requestMatchers("/auth/login", "/auth/register", "/login", "/register", "/403", "/404").permitAll()
-                        .requestMatchers("/dashboard", "/dashboard/**").permitAll()
+                        .requestMatchers("/", "/auth/login", "/auth/register", "/auth/logout", "/login", "/register", "/403", "/404").permitAll()
+                        .requestMatchers("/dashboard", "/dashboard/**").hasRole("ADMIN")
+                        .requestMatchers("/client", "/client/**").hasRole("CLIENT")
+                        .requestMatchers("/api/clients/**").hasRole("ADMIN")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

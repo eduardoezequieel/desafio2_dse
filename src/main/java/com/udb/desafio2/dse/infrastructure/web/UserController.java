@@ -6,6 +6,7 @@ import com.udb.desafio2.dse.application.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,8 +35,11 @@ public class UserController {
     }
 
     @GetMapping
-    public List<UserResponse> getAll() {
-        return userService.getAll();
+    public List<UserResponse> getAll(Authentication authentication) {
+        String currentUserEmail = authentication != null ? authentication.getName() : null;
+        return userService.getAll().stream()
+                .filter(user -> !user.getEmail().equals(currentUserEmail))
+                .toList();
     }
 
     @DeleteMapping("/{id}")

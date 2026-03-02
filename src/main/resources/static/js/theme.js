@@ -1,15 +1,19 @@
 /**
  * Theme Management Utility
  * Handles system preference detection and localStorage persistence
+ *
+ * Logic:
+ * - App always starts with system preference (never saves on init)
+ * - Only localStorage if user manually toggles the theme
+ * - System changes are ALWAYS applied (unless user previously toggled manually)
  */
-
-console.log('Theme.js loaded successfully!');
 
 class ThemeManager {
     constructor() {
         this.THEME_KEY = 'theme-preference';
         this.LIGHT = 'light';
         this.DARK = 'dark';
+        this.isManualOverride = false;
         this.init();
     }
 
@@ -17,9 +21,13 @@ class ThemeManager {
      * Initialize theme on page load
      */
     init() {
-        console.log('hello world');
         const savedTheme = this.getSavedTheme();
         const systemTheme = this.getSystemTheme();
+
+        // Determine if there's a manual override
+        this.isManualOverride = !!savedTheme;
+
+        // Use saved theme if exists (user manually toggled), otherwise use system
         const theme = savedTheme || systemTheme;
 
         this.applyTheme(theme);
@@ -33,7 +41,7 @@ class ThemeManager {
         try {
             return localStorage.getItem(this.THEME_KEY);
         } catch (e) {
-            console.warn('localStorage not available:', e);
+            console.warn('[Theme] localStorage not available:', e);
             return null;
         }
     }
@@ -50,26 +58,45 @@ class ThemeManager {
 
     /**
      * Apply theme by setting data-theme attribute on html element
+     * @param {string} theme - 'light' or 'dark'
+     * @param {boolean} saveToStorage - whether to save this as manual override to localStorage
      */
-    applyTheme(theme) {
+    applyTheme(theme, saveToStorage = false) {
         const validTheme = [this.LIGHT, this.DARK].includes(theme) ? theme : this.LIGHT;
         document.documentElement.setAttribute('data-theme', validTheme);
 
-        try {
-            localStorage.setItem(this.THEME_KEY, validTheme);
-        } catch (e) {
-            console.warn('Could not save theme preference:', e);
+        if (saveToStorage) {
+            this.isManualOverride = true;
+            try {
+                localStorage.setItem(this.THEME_KEY, validTheme);
+            } catch (e) {
+                console.warn('[Theme] Could not save theme preference:', e);
+            }
         }
     }
 
     /**
-     * Toggle between light and dark theme
+     * Toggle between light and dark theme (manual user action)
      */
     toggle() {
         const currentTheme = document.documentElement.getAttribute('data-theme') || this.getSystemTheme();
         const newTheme = currentTheme === this.DARK ? this.LIGHT : this.DARK;
-        this.applyTheme(newTheme);
+        this.applyTheme(newTheme, true); // true = save to localStorage
         return newTheme;
+    }
+
+    /**
+     * Clear manual preference and return to system preference
+     */
+    clearManualPreference() {
+        try {
+            localStorage.removeItem(this.THEME_KEY);
+            this.isManualOverride = false;
+            const systemTheme = this.getSystemTheme();
+            this.applyTheme(systemTheme);
+        } catch (e) {
+            console.warn('[Theme] Could not clear preference:', e);
+        }
     }
 
     /**
@@ -85,15 +112,18 @@ class ThemeManager {
     watchSystemTheme() {
         if (!window.matchMedia) return;
 
-        const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        this._darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
-        // Listen for changes in system preference (modern browsers)
-        darkModeQuery.addEventListener('change', (e) => {
-            const savedTheme = this.getSavedTheme();
-            // Only apply system theme if user hasn't manually set a preference
-            if (!savedTheme) {
-                this.applyTheme(e.matches ? this.DARK : this.LIGHT);
+        // Listen for changes in system preference
+        this._darkModeQuery.addEventListener('change', (e) => {
+            const newTheme = e.matches ? this.DARK : this.LIGHT;
+            this.isManualOverride = false;
+            try {
+                localStorage.removeItem(this.THEME_KEY);
+            } catch (err) {
+                console.warn('[Theme] Could not clear localStorage on system change:', err);
             }
+            this.applyTheme(newTheme, false);
         });
     }
 }

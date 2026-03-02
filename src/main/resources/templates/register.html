@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registrarse - DSE Dashboard</title>
+    <script>
+        (function () {
+            var saved = localStorage.getItem('theme-preference');
+            var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', theme);
+        })();
+    </script>
     <link rel="stylesheet" href="/css/theme-variables.css">
     <script src="/js/theme.js"></script>
     <style>
@@ -229,11 +236,9 @@
                     errorAlert.style.display = 'block';
                 } else {
                     const data = await response.json();
-                    // Guardar token en localStorage
-                    localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data));
-                    // Redirigir al dashboard
-                    window.location.href = '/dashboard';
+                    // Redirigir al panel de cliente
+                    window.location.href = '/client/dashboard';
                 }
             } catch (error) {
                 errorAlert.textContent = 'Error al conectar con el servidor';
