@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/client :: layout(~{::title}, ~{::main})}"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="es">
+<head>
+    <title>Mi Panel — DSE</title>
+</head>
+<body>
+<main>
+    <style>
+        .welcome-card {
+            background: var(--bg-primary);
+            border-radius: 10px;
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .welcome-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .welcome-text h2 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .welcome-text p {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .info-card {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .info-card .label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .info-card .value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .placeholder-section {
+            background: var(--bg-primary);
+            border-radius: 10px;
+            padding: 48px;
+            box-shadow: var(--shadow-sm);
+            text-align: center;
+            color: var(--text-tertiary);
+        }
+
+        .placeholder-section svg {
+            width: 48px;
+            height: 48px;
+            fill: var(--text-tertiary);
+            opacity: 0.4;
+            margin-bottom: 12px;
+        }
+
+        .placeholder-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .placeholder-section p {
+            font-size: 14px;
+        }
+    </style>
+
+    <div class="welcome-card">
+        <div class="welcome-avatar" id="welcomeAvatar">?</div>
+        <div class="welcome-text">
+            <h2 id="welcomeName">Bienvenido</h2>
+            <p id="welcomeEmail">Accede a tus proyectos y servicios desde este panel</p>
+        </div>
+    </div>
+
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="label">Correo electrónico</div>
+            <div class="value" id="infoEmail">—</div>
+        </div>
+        <div class="info-card">
+            <div class="label">Tipo de cuenta</div>
+            <div class="value">Cliente</div>
+        </div>
+    </div>
+
+    <div class="placeholder-section">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+        <h3>Tus servicios aparecerán aquí</h3>
+        <p>Próximamente podrás ver el estado de tus proyectos y servicios contratados.</p>
+    </div>
+
+    <script>
+        (function () {
+            try {
+                const user = JSON.parse(localStorage.getItem('user') || '{}');
+                const nombre = user.nombre || '';
+                const email = user.email || '';
+
+                if (nombre) {
+                    document.getElementById('welcomeName').textContent = 'Bienvenido, ' + nombre;
+                    document.getElementById('welcomeAvatar').textContent = nombre.charAt(0).toUpperCase();
+                }
+                if (email) {
+                    document.getElementById('welcomeEmail').textContent = email;
+                    document.getElementById('infoEmail').textContent = email;
+                }
+            } catch (e) { /* ignore */ }
+        })();
+    </script>
+</main>
+</body>
+</html>

@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/main :: layout(~{::title}, ~{::main})}"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="es">
+<head>
+    <title>Clientes — DSE Admin</title>
+</head>
+<body>
+<main>
+    <style>
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+        .btn-primary { background: var(--gradient-primary); color: white; }
+        .btn-sm { padding: 5px 11px; font-size: 12px; }
+        .btn-edit { background-color: var(--color-info); color: white; }
+        .btn-delete { background-color: var(--color-danger); color: white; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .alert-danger {
+            background-color: var(--color-danger-bg);
+            color: var(--color-danger-text);
+            border: 1px solid var(--color-danger-border);
+        }
+
+        .alert-success {
+            background-color: var(--color-success-bg);
+            color: var(--color-success-text);
+            border: 1px solid var(--color-success-border);
+        }
+
+        .table-card {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .clients-table { width: 100%; border-collapse: collapse; }
+
+        .clients-table th {
+            background-color: var(--bg-secondary);
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .clients-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 14px;
+        }
+
+        .clients-table tbody tr:last-child td { border-bottom: none; }
+        .clients-table tbody tr:hover td { background-color: var(--bg-secondary); }
+
+        .td-actions { display: flex; gap: 6px; }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        /* ── Modal ── */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.45);
+        }
+
+        .modal.show { display: flex; justify-content: center; align-items: center; }
+
+        .modal-content {
+            background-color: var(--bg-primary);
+            padding: 28px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 460px;
+            box-shadow: var(--shadow-lg);
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 { font-size: 17px; font-weight: 700; }
+
+        .close {
+            font-size: 24px; line-height: 1;
+            color: var(--text-tertiary); cursor: pointer;
+            background: none; border: none; padding: 0;
+            transition: color 0.15s;
+        }
+
+        .close:hover { color: var(--text-primary); }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: border-color 0.15s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-focus);
+        }
+
+        .form-group small {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+    </style>
+
+    <div id="errorAlert" class="alert alert-danger" style="display: none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display: none;"></div>
+
+    <div class="table-card">
+        <div class="section-header" style="padding: 18px 18px 0;">
+            <h3>Clientes registrados</h3>
+            <button class="btn btn-primary" onclick="openCreateModal()">+ Crear cliente</button>
+        </div>
+
+        <table class="clients-table" style="margin-top: 16px;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Correo</th>
+                    <th>Empresa</th>
+                    <th>Teléfono</th>
+                    <th>Fecha de registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="clientsBody">
+                <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal -->
+    <div id="clientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Crear cliente</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="clientForm">
+                <div class="form-group">
+                    <label for="inputNombre">Nombre</label>
+                    <input type="text" id="inputNombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputEmail">Correo electrónico</label>
+                    <input type="email" id="inputEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="inputEmpresa">Empresa</label>
+                    <input type="text" id="inputEmpresa">
+                </div>
+                <div class="form-group">
+                    <label for="inputTelefono">Teléfono</label>
+                    <input type="text" id="inputTelefono">
+                </div>
+                <div class="form-group">
+                    <label for="inputPassword">Contraseña</label>
+                    <input type="password" id="inputPassword">
+                    <small id="passwordHint" style="display:none;">Dejar en blanco para mantener la contraseña actual</small>
+                </div>
+                <div id="formError" class="alert alert-danger" style="display: none;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentClientId = null;
+
+        loadClients();
+
+        function loadClients() {
+            authFetch('/api/clients')
+                .then(r => r.json())
+                .then(renderClients)
+                .catch(err => showError('Error al cargar clientes: ' + err.message));
+        }
+
+        function renderClients(clients) {
+            const tbody = document.getElementById('clientsBody');
+            if (!clients.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay clientes registrados</td></tr>';
+                return;
+            }
+            tbody.innerHTML = clients.map(c => `
+                <tr>
+                    <td>${c.id}</td>
+                    <td>${c.nombre}</td>
+                    <td>${c.email}</td>
+                    <td>${c.empresa || '—'}</td>
+                    <td>${c.telefono || '—'}</td>
+                    <td>${formatDate(c.createdAt)}</td>
+                    <td>
+                        <div class="td-actions">
+                            <button class="btn btn-sm btn-edit" onclick="editClient(${c.id})">Editar</button>
+                            <button class="btn btn-sm btn-delete" onclick="deleteClient(${c.id})">Eliminar</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return '—';
+            return new Date(dateString).toLocaleDateString('es-ES', {
+                year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
+        function openCreateModal() {
+            currentClientId = null;
+            document.getElementById('modalTitle').textContent = 'Crear cliente';
+            document.getElementById('clientForm').reset();
+            document.getElementById('passwordHint').style.display = 'none';
+            document.getElementById('formError').style.display = 'none';
+            document.getElementById('clientModal').classList.add('show');
+        }
+
+        function editClient(clientId) {
+            authFetch(`/api/clients/${clientId}`)
+                .then(r => r.json())
+                .then(data => {
+                    currentClientId = data.id;
+                    document.getElementById('modalTitle').textContent = 'Editar cliente';
+                    document.getElementById('inputNombre').value = data.nombre;
+                    document.getElementById('inputEmail').value = data.email;
+                    document.getElementById('inputEmpresa').value = data.empresa || '';
+                    document.getElementById('inputTelefono').value = data.telefono || '';
+                    document.getElementById('inputPassword').value = '';
+                    document.getElementById('passwordHint').style.display = 'block';
+                    document.getElementById('formError').style.display = 'none';
+                    document.getElementById('clientModal').classList.add('show');
+                })
+                .catch(err => showError('Error al cargar cliente: ' + err.message));
+        }
+
+        function deleteClient(clientId) {
+            if (!confirm('¿Eliminar este cliente?')) return;
+            authFetch(`/api/clients/${clientId}`, { method: 'DELETE' })
+                .then(r => {
+                    if (r.ok) { showSuccess('Cliente eliminado correctamente'); loadClients(); }
+                    else return r.json().then(e => { throw new Error(e.message); });
+                })
+                .catch(err => showError('Error al eliminar: ' + err.message));
+        }
+
+        function closeModal() {
+            document.getElementById('clientModal').classList.remove('show');
+            currentClientId = null;
+        }
+
+        document.getElementById('clientForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const nombre = document.getElementById('inputNombre').value;
+            const email = document.getElementById('inputEmail').value;
+            const empresa = document.getElementById('inputEmpresa').value;
+            const telefono = document.getElementById('inputTelefono').value;
+            const password = document.getElementById('inputPassword').value;
+
+            const payload = { nombre, email, empresa, telefono };
+            if (password) payload.password = password;
+
+            const method = currentClientId ? 'PUT' : 'POST';
+            const url = currentClientId ? `/api/clients/${currentClientId}` : '/api/clients';
+
+            authFetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => {
+                if (r.ok) {
+                    showSuccess(currentClientId ? 'Cliente actualizado' : 'Cliente creado');
+                    closeModal();
+                    loadClients();
+                } else return r.json().then(e => { throw new Error(e.message); });
+            })
+            .catch(err => {
+                document.getElementById('formError').textContent = err.message;
+                document.getElementById('formError').style.display = 'block';
+            });
+        });
+
+        function showError(msg) {
+            const el = document.getElementById('errorAlert');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('successAlert');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        window.onclick = e => {
+            if (e.target === document.getElementById('clientModal')) closeModal();
+        };
+    </script>
+</main>
+</body>
+</html>

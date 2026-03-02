@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/main :: layout(~{::title}, ~{::main})}"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="es">
+<head>
+    <title>Inicio — DSE Admin</title>
+</head>
+<body>
+<main>
+    <style>
+        .welcome-card {
+            background: var(--gradient-primary);
+            border-radius: 10px;
+            padding: 32px;
+            color: white;
+            margin-bottom: 28px;
+        }
+
+        .welcome-card h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .welcome-card p {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stat-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .stat-icon.blue   { background: var(--color-info-bg);    color: var(--color-info); }
+        .stat-icon.green  { background: var(--color-success-bg); color: var(--color-success); }
+        .stat-icon.purple { background: var(--color-primary-light); color: var(--color-primary); }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .quick-actions {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .quick-actions h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .actions-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .btn-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 9px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            border: none;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+
+        .btn-action:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .btn-action svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-action.primary {
+            background: var(--gradient-primary);
+            color: white;
+        }
+    </style>
+
+    <div class="welcome-card">
+        <h2>Bienvenido, <span th:text="${userEmail}">usuario</span></h2>
+        <p>Tienes acceso como <strong th:text="${userRole}">ADMIN</strong>. Gestiona el sistema desde aquí.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Total usuarios</div>
+                <div class="stat-value" id="statTotalUsers">—</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Sistema</div>
+                <div class="stat-value" style="font-size:16px; padding-top:4px;">Activo</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="stat-label">Sesión</div>
+                <div class="stat-value" style="font-size:16px; padding-top:4px;">JWT Cookie</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <h3>Acciones rápidas</h3>
+        <div class="actions-row">
+            <a href="/dashboard/users" class="btn-action primary">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                </svg>
+                Gestionar usuarios
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Load user count for the stat card
+        authFetch('/api/users')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('statTotalUsers').textContent = data.length;
+            })
+            .catch(() => {});
+    </script>
+</main>
+</body>
+</html>
