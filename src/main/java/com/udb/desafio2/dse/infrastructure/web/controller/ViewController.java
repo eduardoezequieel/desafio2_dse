@@ -6,6 +6,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
@@ -75,11 +76,47 @@ public class ViewController {
         return "dashboard/clients";
     }
 
+    @GetMapping("/dashboard/services")
+    public String dashboardServices(Model model) {
+        model.addAttribute("activePage", "services");
+        model.addAttribute("pageHeading", "Catálogo de Servicios");
+        return "dashboard/services";
+    }
+
+    @GetMapping("/dashboard/requests")
+    public String dashboardRequests(Model model) {
+        model.addAttribute("activePage", "requests");
+        model.addAttribute("pageHeading", "Solicitudes");
+        return "dashboard/requests";
+    }
+
     @GetMapping("/client/dashboard")
     public String clientDashboard(Model model) {
         model.addAttribute("activePage", "home");
         model.addAttribute("pageHeading", "Mi Panel");
         return "client/dashboard";
+    }
+
+    @GetMapping("/client/services")
+    public String clientServices(Model model) {
+        model.addAttribute("activePage", "services");
+        model.addAttribute("pageHeading", "Servicios disponibles");
+        return "client/services";
+    }
+
+    @GetMapping("/client/requests")
+    public String clientRequests(Model model) {
+        model.addAttribute("activePage", "requests");
+        model.addAttribute("pageHeading", "Mis solicitudes");
+        return "client/requests";
+    }
+
+    @GetMapping("/client/requests/{id}")
+    public String clientRequestDetail(@PathVariable Long id, Model model) {
+        model.addAttribute("activePage", "requests");
+        model.addAttribute("pageHeading", "Detalle de solicitud");
+        model.addAttribute("requestId", id);
+        return "client/request-detail";
     }
 
     @GetMapping("/403")

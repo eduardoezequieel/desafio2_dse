@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/client :: layout(~{::title}, ~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="es">
+<head><title>Servicios — DSE</title></head>
+<body>
+<main>
+<style>
+    .services-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+    }
+    .service-card {
+        background: var(--bg-primary);
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .service-card:hover { box-shadow: var(--shadow-md, 0 4px 16px rgba(0,0,0,0.12)); transform: translateY(-2px); }
+    .service-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+    .service-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+    .service-badge {
+        background: var(--color-primary-light);
+        color: var(--color-primary);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .service-description { font-size: 13px; color: var(--text-secondary); line-height: 1.6; flex: 1; }
+    .service-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+    .service-meta-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text-tertiary); }
+    .service-meta-item svg { width: 14px; height: 14px; fill: currentColor; }
+    .service-price { font-size: 22px; font-weight: 800; color: var(--color-primary); }
+    .btn-request {
+        width: 100%;
+        padding: 10px;
+        background: var(--gradient-primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.15s;
+        margin-top: auto;
+    }
+    .btn-request:hover { opacity: 0.88; }
+    .empty-state { text-align: center; padding: 64px; color: var(--text-tertiary); }
+    .empty-state svg { width: 48px; height: 48px; fill: currentColor; opacity: 0.3; margin-bottom: 12px; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 200; inset: 0; background: rgba(0,0,0,0.45); }
+    .modal.show { display: flex; justify-content: center; align-items: center; }
+    .modal-content {
+        background: var(--bg-primary); border-radius: 12px;
+        padding: 28px; width: 90%; max-width: 460px;
+        box-shadow: var(--shadow-lg); color: var(--text-primary);
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .modal-header h2 { font-size: 18px; font-weight: 700; }
+    .modal-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+    .close { font-size: 24px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; }
+    .close:hover { color: var(--text-primary); }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; }
+    .form-group textarea {
+        width: 100%; padding: 9px 12px; border: 1px solid var(--border-color);
+        border-radius: 6px; font-size: 14px; background: var(--bg-secondary);
+        color: var(--text-primary); resize: vertical; min-height: 90px; font-family: inherit;
+    }
+    .form-group textarea:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-focus); }
+    .char-counter { font-size: 11px; color: var(--text-tertiary); text-align: right; margin-top: 3px; }
+    .modal-summary {
+        background: var(--bg-secondary); border-radius: 8px;
+        padding: 14px 16px; margin-bottom: 16px;
+        display: flex; flex-direction: column; gap: 6px;
+    }
+    .modal-summary-row { display: flex; justify-content: space-between; font-size: 13px; }
+    .modal-summary-row .label { color: var(--text-secondary); }
+    .modal-summary-row .value { font-weight: 600; color: var(--text-primary); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+    .btn { padding: 9px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; }
+    .btn-primary { background: var(--gradient-primary); color: white; }
+    .btn-secondary { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+    .alert-danger { background: var(--color-danger-bg); color: var(--color-danger-text); border: 1px solid var(--color-danger-border); }
+    .alert-success { background: var(--color-success-bg); color: var(--color-success-text); border: 1px solid var(--color-success-border); }
+</style>
+
+<div id="errorAlert"   class="alert alert-danger"  style="display:none;"></div>
+<div id="successAlert" class="alert alert-success" style="display:none;"></div>
+
+<div id="servicesGrid" class="services-grid">
+    <p style="color:var(--text-tertiary); font-size:14px;">Cargando servicios...</p>
+</div>
+
+<!-- Request modal -->
+<div id="requestModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Solicitar servicio</h2>
+            <button class="close" onclick="closeModal()">&times;</button>
+        </div>
+        <p class="modal-subtitle">Revisa el resumen y agrega una nota opcional antes de enviar.</p>
+        <div class="modal-summary">
+            <div class="modal-summary-row">
+                <span class="label">Servicio</span>
+                <span class="value" id="summaryName">—</span>
+            </div>
+            <div class="modal-summary-row">
+                <span class="label">Precio</span>
+                <span class="value" id="summaryPrice">—</span>
+            </div>
+            <div class="modal-summary-row">
+                <span class="label">Tiempo estimado</span>
+                <span class="value" id="summaryTime">—</span>
+            </div>
+        </div>
+        <form id="requestForm">
+            <div class="form-group">
+                <label for="inputNotes">Nota (opcional)</label>
+                <textarea id="inputNotes" maxlength="300" placeholder="Describe tus requerimientos o dudas..."
+                          oninput="document.getElementById('notesCounter').textContent = this.value.length + ' / 300'"></textarea>
+                <div class="char-counter" id="notesCounter">0 / 300</div>
+            </div>
+            <div id="formError" class="alert alert-danger" style="display:none;"></div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Enviar solicitud</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let selectedServiceId = null;
+
+    loadServices();
+
+    function loadServices() {
+        authFetch('/api/services?active=true')
+            .then(r => r.json())
+            .then(renderServices)
+            .catch(() => showError('Error al cargar servicios'));
+    }
+
+    function renderServices(services) {
+        const grid = document.getElementById('servicesGrid');
+        if (!services.length) {
+            grid.innerHTML = `<div class="empty-state">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
+                <p>No hay servicios disponibles en este momento.</p>
+            </div>`;
+            return;
+        }
+        grid.innerHTML = services.map(s => `
+            <div class="service-card">
+                <div class="service-card-header">
+                    <span class="service-name">${escHtml(s.name)}</span>
+                    <span class="service-badge">Disponible</span>
+                </div>
+                <p class="service-description">${escHtml(s.description)}</p>
+                <div class="service-meta">
+                    <span class="service-meta-item">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/></svg>
+                        ${escHtml(s.estimatedTime)}
+                    </span>
+                </div>
+                <div class="service-price">$${Number(s.price).toFixed(2)}</div>
+                <button class="btn-request" onclick="openModal(${s.id}, '${escHtml(s.name)}', '${s.price}', '${escHtml(s.estimatedTime)}')">
+                    Solicitar este servicio
+                </button>
+            </div>
+        `).join('');
+    }
+
+    function openModal(id, name, price, time) {
+        selectedServiceId = id;
+        document.getElementById('summaryName').textContent  = name;
+        document.getElementById('summaryPrice').textContent = '$' + Number(price).toFixed(2);
+        document.getElementById('summaryTime').textContent  = time;
+        document.getElementById('inputNotes').value = '';
+        document.getElementById('notesCounter').textContent = '0 / 300';
+        document.getElementById('formError').style.display = 'none';
+        document.getElementById('requestModal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('requestModal').classList.remove('show');
+        selectedServiceId = null;
+    }
+
+    document.getElementById('requestForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const notes = document.getElementById('inputNotes').value;
+        authFetch('/api/requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ serviceId: selectedServiceId, notes })
+        })
+        .then(r => {
+            if (r.ok) {
+                closeModal();
+                showSuccess('¡Solicitud enviada! Puedes seguir su progreso en "Mis Solicitudes".');
+            } else return r.json().then(e => { throw new Error(e.message); });
+        })
+        .catch(err => {
+            document.getElementById('formError').textContent = err.message;
+            document.getElementById('formError').style.display = 'block';
+        });
+    });
+
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function showError(msg) {
+        const el = document.getElementById('errorAlert');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+    function showSuccess(msg) {
+        const el = document.getElementById('successAlert');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 6000);
+    }
+
+    window.onclick = e => { if (e.target === document.getElementById('requestModal')) closeModal(); };
+</script>
+</main>
+</body>
+</html>
+

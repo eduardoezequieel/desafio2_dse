@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/main :: layout(~{::title}, ~{::main})}"
+      xmlns:th="http://www.thymeleaf.org" lang="es">
+<head><title>Solicitudes — DSE Admin</title></head>
+<body>
+<main>
+<style>
+    .toolbar {
+        display: flex; align-items: center; gap: 10px;
+        flex-wrap: wrap; padding: 16px 18px 0;
+    }
+    .toolbar-search {
+        flex: 1; min-width: 180px; padding: 8px 12px;
+        border: 1px solid var(--border-color); border-radius: 6px;
+        font-size: 13px; background: var(--bg-secondary); color: var(--text-primary);
+    }
+    .toolbar-search:focus { outline: none; border-color: var(--color-primary); box-shadow: 0 0 0 3px var(--color-primary-focus); }
+    .toolbar-select {
+        padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px;
+        font-size: 13px; background: var(--bg-secondary); color: var(--text-primary); cursor: pointer;
+    }
+    .section-header {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 18px 0; margin-bottom: 4px;
+    }
+    .section-header h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); }
+    .table-card { background: var(--bg-primary); border-radius: 8px; box-shadow: var(--shadow-sm); overflow: hidden; }
+    .requests-table { width: 100%; border-collapse: collapse; }
+    .requests-table th {
+        background: var(--bg-secondary); padding: 11px 14px; text-align: left;
+        font-size: 12px; font-weight: 600; color: var(--text-secondary);
+        text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border-color);
+        white-space: nowrap;
+    }
+    .requests-table td {
+        padding: 12px 14px; border-bottom: 1px solid var(--border-light);
+        color: var(--text-primary); font-size: 14px; vertical-align: middle;
+    }
+    .requests-table tbody tr:last-child td { border-bottom: none; }
+    .requests-table tbody tr:hover td { background: var(--bg-secondary); }
+    .status-chip {
+        padding: 4px 10px; border-radius: 999px; font-size: 11px;
+        font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+    }
+    .td-actions { display: flex; gap: 5px; }
+    .btn { padding: 9px 18px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-primary { background: var(--gradient-primary); color: white; }
+    .btn-view   { background: var(--color-info); color: white; }
+    .btn-delete { background: var(--color-danger); color: white; }
+    .btn-secondary { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border-color); }
+    .empty-state { text-align: center; padding: 48px; color: var(--text-tertiary); font-size: 14px; }
+
+    /* Modal */
+    .modal { display: none; position: fixed; z-index: 200; inset: 0; background: rgba(0,0,0,0.45); }
+    .modal.show { display: flex; justify-content: center; align-items: center; }
+    .modal-content {
+        background: var(--bg-primary); border-radius: 12px; padding: 28px;
+        width: 90%; max-width: 520px; box-shadow: var(--shadow-lg);
+        color: var(--text-primary); max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+    .modal-header h2 { font-size: 17px; font-weight: 700; }
+    .close { font-size: 24px; color: var(--text-tertiary); cursor: pointer; background: none; border: none; flex-shrink: 0; }
+    .close:hover { color: var(--text-primary); }
+
+    .detail-section { margin-bottom: 20px; }
+    .detail-section-title {
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.07em; color: var(--text-tertiary); margin-bottom: 10px;
+    }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-light); font-size: 13px; }
+    .info-row:last-child { border-bottom: none; }
+    .info-row .label { color: var(--text-secondary); }
+    .info-row .value { font-weight: 600; color: var(--text-primary); }
+
+    .notes-box {
+        background: var(--bg-secondary); border-radius: 8px; padding: 12px 14px;
+        font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+        font-style: italic; border-left: 3px solid var(--color-primary);
+    }
+
+    /* Timeline in modal */
+    .timeline { position: relative; padding-left: 26px; margin-bottom: 20px; }
+    .timeline::before { content:''; position:absolute; left:8px; top:6px; bottom:6px; width:2px; background:var(--border-color); }
+    .timeline-item { position: relative; margin-bottom: 16px; }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot { position:absolute; left:-21px; top:3px; width:12px; height:12px; border-radius:50%; border:2px solid var(--bg-primary); }
+    .timeline-label { font-size: 12px; font-weight: 700; }
+    .timeline-date  { font-size: 11px; color: var(--text-tertiary); }
+    .timeline-comment { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    /* Status update form */
+    .status-update-card {
+        background: var(--bg-secondary); border-radius: 8px; padding: 16px; margin-top: 4px;
+    }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .form-group select, .form-group textarea {
+        width: 100%; padding: 8px 12px; border: 1px solid var(--border-color);
+        border-radius: 6px; font-size: 13px; background: var(--bg-primary);
+        color: var(--text-primary); font-family: inherit;
+    }
+    .form-group textarea { resize: vertical; min-height: 70px; }
+    .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--color-primary); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+    .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 13px; }
+    .alert-danger { background: var(--color-danger-bg); color: var(--color-danger-text); border: 1px solid var(--color-danger-border); }
+    .alert-success { background: var(--color-success-bg); color: var(--color-success-text); border: 1px solid var(--color-success-border); }
+</style>
+
+<div id="errorAlert"   class="alert alert-danger"  style="display:none; margin:0 0 12px;"></div>
+<div id="successAlert" class="alert alert-success" style="display:none; margin:0 0 12px;"></div>
+
+<div class="table-card">
+    <div class="section-header">
+        <h3>Gestión de solicitudes</h3>
+    </div>
+    <div class="toolbar">
+        <input type="text" id="filterClient" class="toolbar-search"
+               placeholder="Buscar por cliente o servicio..." oninput="applyFilters()">
+        <select id="filterStatus" class="toolbar-select" onchange="applyFilters()">
+            <option value="">Todos los estados</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="IN_REVIEW">En revisión</option>
+            <option value="IN_PROGRESS">En progreso</option>
+            <option value="COMPLETED">Completado</option>
+            <option value="REJECTED">Rechazado</option>
+            <option value="CANCELLED">Cancelado</option>
+        </select>
+    </div>
+    <table class="requests-table" style="margin-top:12px;">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Cliente</th>
+                <th>Servicio</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="requestsBody">
+            <tr><td colspan="6" class="empty-state">Cargando...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Detail + status update modal -->
+<div id="requestModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modalTitle">Detalle de solicitud</h2>
+            <button class="close" onclick="closeModal()">&times;</button>
+        </div>
+
+        <!-- Info -->
+        <div class="detail-section">
+            <div class="detail-section-title">Información general</div>
+            <div id="modalInfo"></div>
+        </div>
+
+        <!-- Notes -->
+        <div id="modalNotesSection" class="detail-section" style="display:none;">
+            <div class="detail-section-title">Nota del cliente</div>
+            <div id="modalNotes" class="notes-box"></div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="detail-section">
+            <div class="detail-section-title">Historial de estados</div>
+            <div id="modalTimeline" class="timeline"></div>
+        </div>
+
+        <!-- Status update -->
+        <div id="statusUpdateSection" class="detail-section">
+            <div class="detail-section-title">Cambiar estado</div>
+            <div class="status-update-card">
+                <div class="form-group">
+                    <label for="newStatus">Nuevo estado</label>
+                    <select id="newStatus"></select>
+                </div>
+                <div class="form-group">
+                    <label for="statusComment">Comentario (opcional)</label>
+                    <textarea id="statusComment" placeholder="Agrega un comentario para el cliente..."></textarea>
+                </div>
+                <div id="updateError" class="alert alert-danger" style="display:none;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cerrar</button>
+                    <button type="button" class="btn btn-primary" onclick="submitStatusUpdate()">Actualizar estado</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let allRequests = [];
+    let currentRequestId = null;
+    let currentStatus = null;
+
+    const TRANSITIONS = {
+        PENDING:     ['IN_REVIEW', 'REJECTED', 'CANCELLED'],
+        IN_REVIEW:   ['IN_PROGRESS', 'REJECTED'],
+        IN_PROGRESS: ['COMPLETED', 'REJECTED'],
+        COMPLETED:   [],
+        REJECTED:    [],
+        CANCELLED:   []
+    };
+
+    const STATUS_LABELS = {
+        PENDING: 'Pendiente', IN_REVIEW: 'En revisión', IN_PROGRESS: 'En progreso',
+        COMPLETED: 'Completado', REJECTED: 'Rechazado', CANCELLED: 'Cancelado'
+    };
+
+    loadRequests();
+
+    function loadRequests() {
+        authFetch('/api/requests')
+            .then(r => r.json())
+            .then(data => {
+                allRequests = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                applyFilters();
+            })
+            .catch(() => showError('Error al cargar solicitudes'));
+    }
+
+    function applyFilters() {
+        const text   = document.getElementById('filterClient').value.toLowerCase();
+        const status = document.getElementById('filterStatus').value;
+        const filtered = allRequests.filter(r => {
+            const matchText = !text ||
+                r.clientName.toLowerCase().includes(text) ||
+                r.serviceName.toLowerCase().includes(text) ||
+                r.clientEmail.toLowerCase().includes(text);
+            const matchStatus = !status || r.status === status;
+            return matchText && matchStatus;
+        });
+        render(filtered);
+    }
+
+    function render(requests) {
+        const tbody = document.getElementById('requestsBody');
+        if (!requests.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No hay solicitudes que coincidan</td></tr>';
+            return;
+        }
+        tbody.innerHTML = requests.map(r => `
+            <tr>
+                <td>#${r.id}</td>
+                <td>
+                    <div style="font-weight:600;">${escHtml(r.clientName)}</div>
+                    <div style="font-size:12px;color:var(--text-tertiary);">${escHtml(r.clientEmail)}</div>
+                </td>
+                <td>${escHtml(r.serviceName)}</td>
+                <td>
+                    <span class="status-chip"
+                          style="background:${r.statusColor}22; color:${r.statusColor};">
+                        ${r.statusLabel}
+                    </span>
+                </td>
+                <td style="font-size:13px;">${formatDate(r.createdAt)}</td>
+                <td>
+                    <div class="td-actions">
+                        <button class="btn btn-sm btn-view"   onclick="openDetail(${r.id})">Ver / Gestionar</button>
+                        <button class="btn btn-sm btn-delete" onclick="deleteRequest(${r.id})">Eliminar</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function openDetail(id) {
+        currentRequestId = id;
+        authFetch(`/api/requests/${id}`)
+            .then(r => r.json())
+            .then(data => {
+                currentStatus = data.status;
+                document.getElementById('modalTitle').textContent = `Solicitud #${data.id}`;
+
+                // Info
+                document.getElementById('modalInfo').innerHTML = `
+                    <div class="info-row"><span class="label">Cliente</span><span class="value">${escHtml(data.clientName)} (${escHtml(data.clientEmail)})</span></div>
+                    <div class="info-row"><span class="label">Servicio</span><span class="value">${escHtml(data.serviceName)}</span></div>
+                    <div class="info-row"><span class="label">Precio</span><span class="value">${escHtml(data.servicePrice)}</span></div>
+                    <div class="info-row"><span class="label">Tiempo estimado</span><span class="value">${escHtml(data.serviceEstimatedTime)}</span></div>
+                    <div class="info-row"><span class="label">Estado actual</span>
+                        <span class="value">
+                            <span class="status-chip" style="background:${data.statusColor}22;color:${data.statusColor};">${data.statusLabel}</span>
+                        </span>
+                    </div>
+                    <div class="info-row"><span class="label">Fecha</span><span class="value">${formatDate(data.createdAt)}</span></div>
+                `;
+
+                // Notes
+                if (data.notes) {
+                    document.getElementById('modalNotes').textContent = data.notes;
+                    document.getElementById('modalNotesSection').style.display = 'block';
+                } else {
+                    document.getElementById('modalNotesSection').style.display = 'none';
+                }
+
+                // Timeline
+                const tl = document.getElementById('modalTimeline');
+                if (data.history && data.history.length) {
+                    tl.innerHTML = data.history.map(h => `
+                        <div class="timeline-item">
+                            <div class="timeline-dot" style="background:${h.color};"></div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                                <span class="timeline-label" style="color:${h.color};">${h.label}</span>
+                                <span class="timeline-date">${formatDatetime(h.changedAt)}</span>
+                            </div>
+                            ${h.comment ? `<div class="timeline-comment">${escHtml(h.comment)}</div>` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    tl.innerHTML = '<p style="font-size:13px;color:var(--text-tertiary);">Sin historial.</p>';
+                }
+
+                // Status update options
+                const transitions = TRANSITIONS[data.status] || [];
+                const sel = document.getElementById('newStatus');
+                sel.innerHTML = transitions.length
+                    ? transitions.map(s => `<option value="${s}">${STATUS_LABELS[s]}</option>`).join('')
+                    : '<option value="">No hay transiciones disponibles</option>';
+                document.getElementById('statusUpdateSection').style.display = transitions.length ? 'block' : 'none';
+                document.getElementById('statusComment').value = '';
+                document.getElementById('updateError').style.display = 'none';
+
+                document.getElementById('requestModal').classList.add('show');
+            })
+            .catch(() => showError('Error al cargar el detalle'));
+    }
+
+    function submitStatusUpdate() {
+        const status  = document.getElementById('newStatus').value;
+        const comment = document.getElementById('statusComment').value;
+        if (!status) return;
+
+        authFetch(`/api/requests/${currentRequestId}/status`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, comment })
+        })
+        .then(r => {
+            if (r.ok) {
+                closeModal();
+                showSuccess('Estado actualizado correctamente');
+                loadRequests();
+            } else return r.json().then(e => { throw new Error(e.message); });
+        })
+        .catch(err => {
+            document.getElementById('updateError').textContent = err.message;
+            document.getElementById('updateError').style.display = 'block';
+        });
+    }
+
+    function deleteRequest(id) {
+        if (!confirm('¿Eliminar esta solicitud permanentemente?')) return;
+        authFetch(`/api/requests/${id}`, { method: 'DELETE' })
+            .then(r => {
+                if (r.ok) { showSuccess('Solicitud eliminada'); loadRequests(); }
+                else return r.json().then(e => { throw new Error(e.message); });
+            })
+            .catch(err => showError('Error: ' + err.message));
+    }
+
+    function closeModal() {
+        document.getElementById('requestModal').classList.remove('show');
+        currentRequestId = null;
+    }
+
+    function formatDate(d) {
+        return new Date(d).toLocaleDateString('es-ES', { year:'numeric', month:'short', day:'numeric' });
+    }
+    function formatDatetime(d) {
+        return new Date(d).toLocaleString('es-ES', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    }
+    function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function showError(msg) {
+        const el = document.getElementById('errorAlert');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 5000);
+    }
+    function showSuccess(msg) {
+        const el = document.getElementById('successAlert');
+        el.textContent = msg; el.style.display = 'block';
+        setTimeout(() => el.style.display = 'none', 4000);
+    }
+
+    window.onclick = e => { if (e.target === document.getElementById('requestModal')) closeModal(); };
+</script>
+</main>
+</body>
+</html>
+

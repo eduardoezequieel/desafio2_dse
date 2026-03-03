@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html th:replace="~{layout/main :: layout(~{::title}, ~{::main})}"
+      xmlns:th="http://www.thymeleaf.org"
+      lang="es">
+<head>
+    <title>Servicios — DSE Admin</title>
+</head>
+<body>
+<main>
+    <style>
+        .toolbar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 16px 18px 0;
+        }
+
+        .toolbar-search {
+            flex: 1;
+            min-width: 180px;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: border-color 0.15s;
+        }
+
+        .toolbar-search:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-focus);
+        }
+
+        .toolbar-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 13px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+
+        .toolbar-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .section-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            padding: 9px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: opacity 0.15s, transform 0.15s;
+        }
+
+        .btn:hover { opacity: 0.85; transform: translateY(-1px); }
+        .btn-primary { background: var(--gradient-primary); color: white; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+        .btn-edit { background-color: var(--color-info); color: white; }
+        .btn-toggle-on  { background-color: var(--color-warning, #f59e0b); color: white; }
+        .btn-toggle-off { background-color: var(--color-success, #10b981); color: white; }
+        .btn-soft-delete  { background-color: var(--color-warning, #f59e0b); color: white; }
+        .btn-hard-delete  { background-color: var(--color-danger); color: white; }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+        }
+
+        .alert-danger {
+            background-color: var(--color-danger-bg);
+            color: var(--color-danger-text);
+            border: 1px solid var(--color-danger-border);
+        }
+
+        .alert-success {
+            background-color: var(--color-success-bg);
+            color: var(--color-success-text);
+            border: 1px solid var(--color-success-border);
+        }
+
+        .table-card {
+            background: var(--bg-primary);
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+        .services-table { width: 100%; border-collapse: collapse; }
+
+        .services-table th {
+            background-color: var(--bg-secondary);
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border-color);
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .services-table th.sortable {
+            cursor: pointer;
+        }
+
+        .services-table th.sortable:hover {
+            color: var(--color-primary);
+        }
+
+        .sort-icon { margin-left: 4px; opacity: 0.4; font-style: normal; }
+        .sort-icon.active { opacity: 1; color: var(--color-primary); }
+
+        .services-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-light);
+            color: var(--text-primary);
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .services-table tbody tr:last-child td { border-bottom: none; }
+        .services-table tbody tr:hover td { background-color: var(--bg-secondary); }
+
+        .td-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+
+        .td-description {
+            max-width: 260px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .status-active {
+            background: var(--color-success-bg);
+            color: var(--color-success-text);
+        }
+
+        .status-inactive {
+            background: var(--color-danger-bg);
+            color: var(--color-danger-text);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 48px;
+            color: var(--text-tertiary);
+            font-size: 14px;
+        }
+
+        /* ── Modal ── */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 200;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.45);
+        }
+
+        .modal.show { display: flex; justify-content: center; align-items: center; }
+
+        .modal-content {
+            background-color: var(--bg-primary);
+            padding: 28px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-lg);
+            color: var(--text-primary);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 { font-size: 17px; font-weight: 700; }
+
+        .close {
+            font-size: 24px; line-height: 1;
+            color: var(--text-tertiary); cursor: pointer;
+            background: none; border: none; padding: 0;
+            transition: color 0.15s;
+        }
+
+        .close:hover { color: var(--text-primary); }
+
+        .form-group { margin-bottom: 14px; }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            transition: border-color 0.15s;
+            font-family: inherit;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px var(--color-primary-focus);
+        }
+
+        .form-group small {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .char-counter {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .char-counter.warn { color: var(--color-warning, #f59e0b); }
+        .char-counter.over { color: var(--color-danger); }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Confirm dialog overlay */
+        .confirm-overlay {
+            display: none;
+            position: fixed;
+            z-index: 300;
+            inset: 0;
+            background-color: rgba(0,0,0,0.55);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .confirm-overlay.show { display: flex; }
+
+        .confirm-box {
+            background: var(--bg-primary);
+            border-radius: 10px;
+            padding: 24px 28px;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .confirm-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 10px; }
+        .confirm-box p  { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; }
+
+        .confirm-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    </style>
+
+    <div id="errorAlert"   class="alert alert-danger"  style="display:none;"></div>
+    <div id="successAlert" class="alert alert-success" style="display:none;"></div>
+
+    <div class="table-card">
+        <!-- Header -->
+        <div class="section-header" style="padding: 18px 18px 0;">
+            <h3>Catálogo de servicios</h3>
+            <button class="btn btn-primary" onclick="openCreateModal()">+ Nuevo servicio</button>
+        </div>
+
+        <!-- Filters -->
+        <div class="toolbar">
+            <input type="text"
+                   id="filterName"
+                   class="toolbar-search"
+                   placeholder="Buscar por nombre..."
+                   oninput="applyFilters()">
+            <select id="filterStatus" class="toolbar-select" onchange="applyFilters()">
+                <option value="">Todos los estados</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+            </select>
+        </div>
+
+        <!-- Table -->
+        <table class="services-table" style="margin-top: 12px;">
+            <thead>
+                <tr>
+                    <th class="sortable" onclick="sortBy('id')">
+                        ID <i class="sort-icon" id="sort-id">↕</i>
+                    </th>
+                    <th class="sortable" onclick="sortBy('name')">
+                        Nombre <i class="sort-icon" id="sort-name">↕</i>
+                    </th>
+                    <th>Descripción</th>
+                    <th class="sortable" onclick="sortBy('price')">
+                        Precio <i class="sort-icon" id="sort-price">↕</i>
+                    </th>
+                    <th class="sortable" onclick="sortBy('estimatedTime')">
+                        Tiempo est. <i class="sort-icon" id="sort-estimatedTime">↕</i>
+                    </th>
+                    <th class="sortable" onclick="sortBy('active')">
+                        Estado <i class="sort-icon" id="sort-active">↕</i>
+                    </th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="servicesBody">
+                <tr><td colspan="7" class="empty-state">Cargando...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Create / Edit Modal -->
+    <div id="serviceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nuevo servicio</h2>
+                <button class="close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="serviceForm">
+                <div class="form-group">
+                    <label for="inputName">Nombre</label>
+                    <input type="text" id="inputName" maxlength="100" required oninput="updateCounter('inputName','counterName',100)">
+                    <div class="char-counter" id="counterName">0 / 100</div>
+                </div>
+                <div class="form-group">
+                    <label for="inputDescription">Descripción</label>
+                    <textarea id="inputDescription" maxlength="500" required oninput="updateCounter('inputDescription','counterDesc',500)"></textarea>
+                    <div class="char-counter" id="counterDesc">0 / 500</div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inputPrice">Precio ($)</label>
+                        <input type="number" id="inputPrice" min="0.01" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Tiempo estimado</label>
+                        <div style="display:flex; gap:6px;">
+                            <input type="number" id="inputEstimatedTimeValue" min="1" step="1" required
+                                   style="flex:1; padding:9px 12px; border:1px solid var(--border-color); border-radius:6px; font-size:14px; background-color:var(--bg-secondary); color:var(--text-primary);">
+                            <select id="inputEstimatedTimeUnit"
+                                    style="padding:9px 10px; border:1px solid var(--border-color); border-radius:6px; font-size:14px; background-color:var(--bg-secondary); color:var(--text-primary); cursor:pointer;">
+                                <option value="horas">Horas</option>
+                                <option value="días">Días</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div id="formError" class="alert alert-danger" style="display:none;"></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hard delete confirmation -->
+    <div id="confirmOverlay" class="confirm-overlay">
+        <div class="confirm-box">
+            <h3>¿Eliminar permanentemente?</h3>
+            <p>Esta acción no se puede deshacer. El servicio será eliminado de forma definitiva.</p>
+            <div class="confirm-actions">
+                <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+                <button class="btn btn-hard-delete" onclick="confirmHardDelete()">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allServices  = [];
+        let currentServiceId = null;
+        let pendingHardDeleteId = null;
+        let sortField = 'id';
+        let sortAsc   = true;
+
+        loadServices();
+
+        /* ── Load & filter ── */
+        function loadServices() {
+            authFetch('/api/services')
+                .then(r => r.json())
+                .then(data => { allServices = data; applyFilters(); })
+                .catch(err => showError('Error al cargar servicios: ' + err.message));
+        }
+
+        function applyFilters() {
+            const name   = document.getElementById('filterName').value.trim().toLowerCase();
+            const status = document.getElementById('filterStatus').value;
+
+            let filtered = allServices.filter(s => {
+                const matchName   = !name   || s.name.toLowerCase().includes(name);
+                const matchStatus = status === '' || String(s.active) === status;
+                return matchName && matchStatus;
+            });
+
+            filtered = sortData(filtered);
+            render(filtered);
+        }
+
+        /* ── Sort ── */
+        function sortBy(field) {
+            if (sortField === field) {
+                sortAsc = !sortAsc;
+            } else {
+                sortField = field;
+                sortAsc   = true;
+            }
+            document.querySelectorAll('.sort-icon').forEach(el => {
+                el.textContent = '↕';
+                el.classList.remove('active');
+            });
+            const icon = document.getElementById('sort-' + field);
+            if (icon) {
+                icon.textContent = sortAsc ? '↑' : '↓';
+                icon.classList.add('active');
+            }
+            applyFilters();
+        }
+
+        function sortData(list) {
+            return [...list].sort((a, b) => {
+                let av = a[sortField];
+                let bv = b[sortField];
+                if (typeof av === 'string') av = av.toLowerCase();
+                if (typeof bv === 'string') bv = bv.toLowerCase();
+                if (av < bv) return sortAsc ? -1 : 1;
+                if (av > bv) return sortAsc ?  1 : -1;
+                return 0;
+            });
+        }
+
+        /* ── Render ── */
+        function render(services) {
+            const tbody = document.getElementById('servicesBody');
+            if (!services.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No hay servicios que coincidan</td></tr>';
+                return;
+            }
+            tbody.innerHTML = services.map(s => `
+                <tr>
+                    <td>${s.id}</td>
+                    <td>${escHtml(s.name)}</td>
+                    <td class="td-description" title="${escHtml(s.description)}">${escHtml(s.description)}</td>
+                    <td>$${Number(s.price).toFixed(2)}</td>
+                    <td>${escHtml(s.estimatedTime)}</td>
+                    <td>
+                        <span class="status-badge ${s.active ? 'status-active' : 'status-inactive'}">
+                            ${s.active ? 'Activo' : 'Inactivo'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="td-actions">
+                            <button class="btn btn-sm btn-edit"
+                                    onclick="editService(${s.id})">Editar</button>
+                            <button class="btn btn-sm ${s.active ? 'btn-toggle-on' : 'btn-toggle-off'}"
+                                    onclick="toggleService(${s.id})">
+                                ${s.active ? 'Desactivar' : 'Activar'}
+                            </button>
+                            <button class="btn btn-sm btn-hard-delete"
+                                    onclick="openConfirm(${s.id})">Eliminar</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        /* ── CRUD ── */
+        function openCreateModal() {
+            currentServiceId = null;
+            document.getElementById('modalTitle').textContent = 'Nuevo servicio';
+            document.getElementById('serviceForm').reset();
+            document.getElementById('inputEstimatedTimeUnit').value = 'horas';
+            updateCounter('inputName',        'counterName', 100);
+            updateCounter('inputDescription', 'counterDesc', 500);
+            document.getElementById('formError').style.display = 'none';
+            document.getElementById('serviceModal').classList.add('show');
+        }
+
+        function editService(id) {
+            authFetch(`/api/services/${id}`)
+                .then(r => r.json())
+                .then(s => {
+                    currentServiceId = s.id;
+                    document.getElementById('modalTitle').textContent = 'Editar servicio';
+                    document.getElementById('inputName').value          = s.name;
+                    document.getElementById('inputDescription').value   = s.description;
+                    document.getElementById('inputPrice').value         = s.price;
+                    // parse "2 horas" or "3 días" back into value + unit
+                    const parts = (s.estimatedTime || '').split(' ');
+                    document.getElementById('inputEstimatedTimeValue').value = parts[0] || '';
+                    document.getElementById('inputEstimatedTimeUnit').value  = parts[1] || 'horas';
+                    updateCounter('inputName',        'counterName', 100);
+                    updateCounter('inputDescription', 'counterDesc', 500);
+                    document.getElementById('formError').style.display = 'none';
+                    document.getElementById('serviceModal').classList.add('show');
+                })
+                .catch(err => showError('Error al cargar servicio: ' + err.message));
+        }
+
+        function toggleService(id) {
+            authFetch(`/api/services/${id}/toggle`, { method: 'PATCH' })
+                .then(r => {
+                    if (r.ok) { loadServices(); showSuccess('Estado actualizado'); }
+                    else return r.json().then(e => { throw new Error(e.message); });
+                })
+                .catch(err => showError('Error: ' + err.message));
+        }
+
+        function openConfirm(id) {
+            pendingHardDeleteId = id;
+            document.getElementById('confirmOverlay').classList.add('show');
+        }
+
+        function closeConfirm() {
+            pendingHardDeleteId = null;
+            document.getElementById('confirmOverlay').classList.remove('show');
+        }
+
+        function confirmHardDelete() {
+            if (!pendingHardDeleteId) return;
+            authFetch(`/api/services/${pendingHardDeleteId}/permanent`, { method: 'DELETE' })
+                .then(r => {
+                    if (r.ok) { showSuccess('Servicio eliminado permanentemente'); loadServices(); }
+                    else return r.json().then(e => { throw new Error(e.message); });
+                })
+                .catch(err => showError('Error al eliminar: ' + err.message))
+                .finally(closeConfirm);
+        }
+
+        function closeModal() {
+            document.getElementById('serviceModal').classList.remove('show');
+            currentServiceId = null;
+        }
+
+        document.getElementById('serviceForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const payload = {
+                name:          document.getElementById('inputName').value,
+                description:   document.getElementById('inputDescription').value,
+                price:         parseFloat(document.getElementById('inputPrice').value),
+                estimatedTime: `${document.getElementById('inputEstimatedTimeValue').value} ${document.getElementById('inputEstimatedTimeUnit').value}`
+            };
+
+            const method = currentServiceId ? 'PUT' : 'POST';
+            const url    = currentServiceId ? `/api/services/${currentServiceId}` : '/api/services';
+
+            authFetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(r => {
+                if (r.ok) {
+                    showSuccess(currentServiceId ? 'Servicio actualizado' : 'Servicio creado');
+                    closeModal();
+                    loadServices();
+                } else return r.json().then(e => { throw new Error(e.message); });
+            })
+            .catch(err => {
+                document.getElementById('formError').textContent = err.message;
+                document.getElementById('formError').style.display = 'block';
+            });
+        });
+
+        /* ── Helpers ── */
+        function updateCounter(inputId, counterId, max) {
+            const len = document.getElementById(inputId).value.length;
+            const el  = document.getElementById(counterId);
+            el.textContent = `${len} / ${max}`;
+            el.className = 'char-counter' + (len > max * 0.9 ? (len >= max ? ' over' : ' warn') : '');
+        }
+
+        function escHtml(str) {
+            return String(str)
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;');
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorAlert');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function showSuccess(msg) {
+            const el = document.getElementById('successAlert');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        window.onclick = e => {
+            if (e.target === document.getElementById('serviceModal')) closeModal();
+            if (e.target === document.getElementById('confirmOverlay')) closeConfirm();
+        };
+    </script>
+</main>
+</body>
+</html>
+
