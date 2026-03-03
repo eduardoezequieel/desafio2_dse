@@ -190,7 +190,7 @@
     <div class="table-card">
         <div class="section-header" style="padding: 18px 18px 0;">
             <h3>Clientes registrados</h3>
-            <button class="btn btn-primary" onclick="openCreateModal()">+ Crear cliente</button>
+            <button class="btn btn-primary" onclick="openCreateModal()" th:if="${userRawRole == 'ADMIN'}">+ Crear cliente</button>
         </div>
 
         <table class="clients-table" style="margin-top: 16px;">
@@ -249,8 +249,9 @@
         </div>
     </div>
 
-    <script>
+    <script th:inline="javascript">
         let currentClientId = null;
+        var canEditClients = [[${userRawRole == 'ADMIN'}]];
 
         loadClients();
 
@@ -276,10 +277,10 @@
                     <td>${c.telefono || '—'}</td>
                     <td>${formatDate(c.createdAt)}</td>
                     <td>
-                        <div class="td-actions">
+                        ${canEditClients ? `<div class="td-actions">
                             <button class="btn btn-sm btn-edit" onclick="editClient(${c.id})">Editar</button>
                             <button class="btn btn-sm btn-delete" onclick="deleteClient(${c.id})">Eliminar</button>
-                        </div>
+                        </div>` : '—'}
                     </td>
                 </tr>
             `).join('');

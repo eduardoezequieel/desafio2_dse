@@ -2,7 +2,8 @@ package com.udb.desafio2.dse.domain.user.model;
 
 public enum Role {
     ADMIN("ADMIN"),
-    INTERNAL_USER("INTERNAL_USER");
+    INTERNAL_USER("INTERNAL_USER"),
+    TECHNICAL_STAFF("TECHNICAL_STAFF");
 
     private final String value;
 

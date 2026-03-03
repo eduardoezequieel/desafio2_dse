@@ -10,6 +10,7 @@ public class RoleTranslator {
         return switch (role.toUpperCase()) {
             case "ADMIN" -> "Administrador";
             case "INTERNAL_USER" -> "Usuario Interno";
+            case "TECHNICAL_STAFF" -> "Personal Técnico";
             case "CLIENT" -> "Cliente";
             default -> "Usuario";
         };

@@ -284,6 +284,13 @@
                     <input type="password" id="inputPassword">
                     <small id="passwordHint" style="display:none;">Dejar en blanco para mantener la contraseña actual</small>
                 </div>
+                <div class="form-group">
+                    <label for="inputRole">Rol</label>
+                    <select id="inputRole" style="width:100%; padding:9px 12px; border:1px solid var(--border-color); border-radius:6px; font-size:14px; background:var(--bg-secondary); color:var(--text-primary);">
+                        <option value="ADMIN">Administrador</option>
+                        <option value="TECHNICAL_STAFF">Personal Técnico</option>
+                    </select>
+                </div>
                 <div id="formError" class="alert alert-danger" style="display: none;"></div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
@@ -295,6 +302,12 @@
 
     <script>
         let currentUserId = null;
+
+        function roleLabel(role) {
+            if (!role || !role.trim()) return 'Usuario';
+            const labels = { ADMIN: 'Administrador', TECHNICAL_STAFF: 'Personal Técnico', CLIENT: 'Cliente', INTERNAL_USER: 'Usuario Interno' };
+            return labels[role.toUpperCase()] || 'Usuario';
+        }
 
         loadUsers();
 
@@ -316,7 +329,7 @@
                     <td>${u.id}</td>
                     <td>${u.nombre}</td>
                     <td>${u.email}</td>
-                    <td><span class="role-badge">${u.role}</span></td>
+                    <td><span class="role-badge">${roleLabel(u.role)}</span></td>
                     <td>${formatDate(u.createdAt)}</td>
                     <td>
                         <div class="td-actions">
@@ -354,6 +367,7 @@
                     document.getElementById('inputNombre').value = data.nombre;
                     document.getElementById('inputEmail').value = data.email;
                     document.getElementById('inputPassword').value = '';
+                    document.getElementById('inputRole').value = data.role;
                     document.getElementById('passwordHint').style.display = 'block';
                     document.getElementById('formError').style.display = 'none';
                     document.getElementById('userModal').classList.add('show');
@@ -381,8 +395,9 @@
             const nombre = document.getElementById('inputNombre').value;
             const email = document.getElementById('inputEmail').value;
             const password = document.getElementById('inputPassword').value;
+            const role = document.getElementById('inputRole').value;
 
-            const payload = { nombre, email };
+            const payload = { nombre, email, role };
             if (password) payload.password = password;
 
             const method = currentUserId ? 'PUT' : 'POST';

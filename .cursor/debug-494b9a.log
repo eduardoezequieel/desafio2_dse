@@ -1,0 +1,3 @@
+{"sessionId":"494b9a","location":"login.html:redirect","message":"login redirect decision","data":{"raw":"/dashboard","role":"CLIENT","redirectDefault":"/client/dashboard","redirectUrl":"/client/dashboard"},"timestamp":1772507755886,"hypothesisId":"A"}
+{"sessionId":"494b9a","location":"login.html:redirect","message":"role check","data":{"role":"CLIENT","roleIsClient":true},"timestamp":1772507755887,"hypothesisId":"B"}
+{"sessionId":"494b9a","location":"login.html:redirect","message":"login redirect decision","data":{"raw":"/dashboard","role":"CLIENT","redirectDefault":"/client/dashboard","redirectUrl":"/client/dashboard"},"timestamp":1772507889050,"hypothesisId":"A"}

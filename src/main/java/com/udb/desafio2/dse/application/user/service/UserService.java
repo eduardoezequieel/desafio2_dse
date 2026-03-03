@@ -28,7 +28,7 @@ public class UserService {
         User user = new User();
         user.updateData(request.getNombre(), request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(Role.ADMIN);
+        user.setRole(request.getRole() != null ? Role.fromValue(request.getRole()) : Role.ADMIN);
         user.setCreatedAt(LocalDateTime.now());
 
         return toResponse(userRepository.save(user));
@@ -42,6 +42,11 @@ public class UserService {
         // Solo actualizar password si se proporciona
         if (request.getPassword() != null && !request.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        // Actualizar rol si se proporciona
+        if (request.getRole() != null && !request.getRole().isBlank()) {
+            user.setRole(Role.fromValue(request.getRole()));
         }
 
         return toResponse(userRepository.save(user));

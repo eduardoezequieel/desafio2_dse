@@ -30,7 +30,7 @@ public class ServiceRequestController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICAL_STAFF')")
     public List<ServiceRequestResponse> getAll(@RequestParam(required = false) RequestStatus status) {
         return requestService.getAll(status);
     }
@@ -42,7 +42,7 @@ public class ServiceRequestController {
     }
 
     @GetMapping("/pending-count")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICAL_STAFF')")
     public Map<String, Long> getPendingCount() {
         return Map.of("count", requestService.countPending());
     }
@@ -53,7 +53,7 @@ public class ServiceRequestController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICAL_STAFF')")
     public ServiceRequestResponse updateStatus(@PathVariable Long id, @Valid @RequestBody StatusUpdateRequest dto) {
         return requestService.updateStatus(id, dto);
     }
@@ -67,7 +67,7 @@ public class ServiceRequestController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TECHNICAL_STAFF')")
     public void delete(@PathVariable Long id) {
         requestService.delete(id);
     }

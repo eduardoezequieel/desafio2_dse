@@ -18,6 +18,7 @@ public class AuthModelAdvice {
                     .findFirst()
                     .map(a -> a.getAuthority().replace("ROLE_", ""))
                     .orElse("USER");
+            model.addAttribute("userRawRole", role);
             model.addAttribute("userRole", RoleTranslator.translateRole(role));
         }
     }

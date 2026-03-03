@@ -17,10 +17,10 @@ public class ViewController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()
                 && !authentication.getPrincipal().equals("anonymousUser")) {
-            boolean isAdmin = authentication.getAuthorities().stream()
+            boolean isDashboardUser = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .anyMatch("ROLE_ADMIN"::equals);
-            return isAdmin ? "redirect:/dashboard" : "redirect:/client/dashboard";
+                    .anyMatch(a -> a.equals("ROLE_ADMIN") || a.equals("ROLE_TECHNICAL_STAFF"));
+            return isDashboardUser ? "redirect:/dashboard" : "redirect:/client/dashboard";
         }
         return "landing";
     }
@@ -30,10 +30,10 @@ public class ViewController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()
                 && !authentication.getPrincipal().equals("anonymousUser")) {
-            boolean isAdmin = authentication.getAuthorities().stream()
+            boolean isDashboardUser = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .anyMatch("ROLE_ADMIN"::equals);
-            return isAdmin ? "redirect:/dashboard" : "redirect:/client/dashboard";
+                    .anyMatch(a -> a.equals("ROLE_ADMIN") || a.equals("ROLE_TECHNICAL_STAFF"));
+            return isDashboardUser ? "redirect:/dashboard" : "redirect:/client/dashboard";
         }
 
         if (redirect != null && !redirect.isBlank()) {
@@ -47,10 +47,10 @@ public class ViewController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.isAuthenticated()
                 && !authentication.getPrincipal().equals("anonymousUser")) {
-            boolean isAdmin = authentication.getAuthorities().stream()
+            boolean isDashboardUser = authentication.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .anyMatch("ROLE_ADMIN"::equals);
-            return isAdmin ? "redirect:/dashboard" : "redirect:/client/dashboard";
+                    .anyMatch(a -> a.equals("ROLE_ADMIN") || a.equals("ROLE_TECHNICAL_STAFF"));
+            return isDashboardUser ? "redirect:/dashboard" : "redirect:/client/dashboard";
         }
         return "register";
     }

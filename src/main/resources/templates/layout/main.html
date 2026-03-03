@@ -317,6 +317,7 @@
             <div class="nav-section-label">Administración</div>
 
             <a href="/dashboard/users"
+               th:if="${userRawRole == 'ADMIN'}"
                th:classappend="${activePage == 'users'} ? ' active'"
                class="nav-item">
                 <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -335,6 +336,7 @@
             </a>
 
             <a href="/dashboard/services"
+               th:if="${userRawRole == 'ADMIN'}"
                th:classappend="${activePage == 'services'} ? ' active'"
                class="nav-item">
                 <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

@@ -224,7 +224,9 @@
                     // Redirigir a la página original o al dashboard según el rol
                     const raw = document.getElementById('redirectUrl').value;
                     const redirectDefault = data.role === 'CLIENT' ? '/client/dashboard' : '/dashboard';
-                    const redirectUrl = (raw && raw !== '/') ? raw : redirectDefault;
+                    // No enviar a /dashboard a clientes cuando raw es el valor por defecto (no hubo ?redirect=)
+                    const useRaw = raw && raw !== '/' && !(data.role === 'CLIENT' && raw === '/dashboard');
+                    const redirectUrl = useRaw ? raw : redirectDefault;
                     window.location.href = redirectUrl;
                 }
             } catch (error) {
